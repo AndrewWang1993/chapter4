@@ -11,16 +11,23 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.text.Layout;
+import android.text.method.Touch;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.PopupWindow;
 import android.widget.RemoteViews;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.reflect.Field;
@@ -33,8 +40,10 @@ import java.util.logging.LogRecord;
 
 
 public class MainActivity extends Activity {
-    Button button1;
+    Button button1, changeTextBtn;
     Button longPressShowMenu;
+    TextView customTextView = null;
+    String myCustomText;
     String[] provinces = new String[]{
             "aa", "bb", "cc"
     };
@@ -43,6 +52,9 @@ public class MainActivity extends Activity {
     public Dialog mAlertDiaglog;
     private static int i = 1;
     NotificationManager notifyManager;
+    PopupWindow popupWindow;
+    int menuFlag = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,8 +62,9 @@ public class MainActivity extends Activity {
         button1 = (Button) findViewById(R.id.button1);
         makeMessage();
         Event();
-        longPressShowMenu=(Button)findViewById(R.id.LongPressShowMenu);
+        longPressShowMenu = (Button) findViewById(R.id.LongPressShowMenu);
         registerForContextMenu(longPressShowMenu);
+
     }
 
     private void makeMessage() {
@@ -111,7 +124,7 @@ public class MainActivity extends Activity {
 //                .setContentIntent(pendingIntent).build();
 //        notifyManager.notify(i++, notification);
 
-         notifyManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notifyManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         Notification notification = new Notification(R.drawable.pic1, "New message", System.currentTimeMillis());
 
 //        Intent intent=new Intent("brodcast");   //开启广播
@@ -122,10 +135,10 @@ public class MainActivity extends Activity {
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, FullscreenActivity.class), 0);
         notification.setLatestEventInfo(this, "Title", "content", pendingIntent);
-        notification.flags=Notification.FLAG_ONGOING_EVENT;//设置为点击按钮不能清除
-        RemoteViews remoteview=new RemoteViews(getPackageName(),R.layout.custom_view);
-        remoteview.setTextViewText(R.id.custome_textview,"changed by notify");
-        notification.contentView=remoteview;
+        notification.flags = Notification.FLAG_ONGOING_EVENT;//设置为点击按钮不能清除
+        RemoteViews remoteview = new RemoteViews(getPackageName(), R.layout.custom_view);
+        remoteview.setTextViewText(R.id.custome_textview, "changed by notify");
+        notification.contentView = remoteview;
         notifyManager.notify(i++, notification);
 
     }
@@ -210,10 +223,10 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     Log.v("Refection Error", e.getMessage());
                 }
-
-
             }
         });
+
+
 
     }
 
@@ -249,40 +262,119 @@ public class MainActivity extends Activity {
     }
 
 
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        // Inflate the menu; this adds items to the action bar if it is present.
+//        menu.add(1, 1, 1, "ttt");
+//        menu.add(1, 2, 2, "xxx");
+//        menu.add(1, 3, 3, "jjj");
+//        menu.add(1, 4, 4, "mmm");
+//
+//        getMenuInflater().inflate(R.menu.menu_main, menu);
+//        return true;
+//    }
+
+
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        SubMenu subMenu=menu.addSubMenu(1,1,2,"File");
+//        subMenu.setHeaderIcon(R.drawable.pic1);
+//        subMenu.setIcon(R.drawable.pic2);
+//
+//        MenuItem menuItem1=subMenu.add(1,1,1,"111");
+//        MenuItem menuItem2=subMenu.add(3,2,2,"222");
+//        MenuItem menuItem3=subMenu.add(3,3,3,"333");
+//        menuItem1.setCheckable(true);
+//        menuItem1.setChecked(true);
+//        menuItem3.setChecked(true);
+//        subMenu.setGroupCheckable(3,true,true);
+//        return true;
+//    }
 
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menu.add(1,1,1,"ttt");
-        menu.add(1,2,2,"xxx");
-        menu.add(1,3,3,"jjj");
-        menu.add(1,4,4,"mmm");
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_MENU:
+                if (menuFlag == 1) {
+                    return false;
+                }
+                View view = getLayoutInflater().inflate(R.layout.custom_view, null);
+                customTextView = (TextView) view.findViewById(R.id.custome_textview);
+                changeTextBtn = (Button) view.findViewById(R.id.changeTextBtn);
+menuEvent();
+                popupWindow = new PopupWindow(view, 200, 200);
+                popupWindow.showAtLocation(view, Gravity.CENTER, 100, 0);
+                menuFlag = 1;
+                return false;
+            case KeyEvent.KEYCODE_BACK:
+                if (menuFlag == 1) {
+                    popupWindow.dismiss();
+                    menuFlag = 2;
+                } else if (menuFlag == 2) {
+                    finish();
+                }
+                return false;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private void menuEvent() {
+        changeTextBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                customTextView.setText("daf");
+                customTextView.setGravity(Gravity.END);
+            }
+        });
+    }
+
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_UP && popupWindow.isShowing()) {
+            popupWindow.dismiss();
+            menuFlag = 2;
+        }
+        return super.onTouchEvent(event);
+    }
+
+
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {   //会屏蔽OptionsItemSelected
+        switch (item.getItemId()) {
+            case 1:
+                Log.i("dsfasdfasdfa", "2222222222222222222222222");
+        }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case 1:
+                Toast.makeText(this, "dddd", Toast.LENGTH_LONG).show();
         }
-
-        return super.onOptionsItemSelected(item);
+        return true;
     }
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        menu.add(1,1,1,"aaa");
-        menu.add(1,2,2,"bbb");
-        menu.add(1,3,3,"ccc");
-        menu.add(1,4,4,"ddd");
+//        if (v.getId() == longPressShowMenu.getId()) {
+//            Toast.makeText(this, "same", Toast.LENGTH_LONG).show();
+//        }
+        menu.add(1, 1, 1, "aaa");
+        menu.add(1, 2, 2, "bbb");
+        menu.add(1, 3, 3, "ccc");
+        menu.add(1, 4, 4, "ddd");
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+            Toast.makeText(this, "context selected", Toast.LENGTH_LONG).show();
+        }
+        return super.onContextItemSelected(item);
     }
 
 

@@ -56,8 +56,9 @@
             android:id="@+id/LongPressShowMenu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lo"
+            android:text="LongPress"
           />
+
         </GridLayout>
 
 
